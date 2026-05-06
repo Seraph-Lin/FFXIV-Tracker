@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXIV 個人任務助手 (本地版)</title>
+    <title>FFXIV 任務追蹤器</title>
     <style>
         :root { --primary: #e0c068; --bg: #1a1d21; --card: #2c2f33; --text: #f0f0f0; --weekly: #4a90e2; --memo-bg: #fff9c4; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
@@ -20,12 +20,13 @@
         .timer { font-family: monospace; color: #ffcc00; font-size: 0.85rem; }
         .count-controls { display: flex; align-items: center; gap: 8px; }
         button.ctrl-btn { background: #444; border: none; color: white; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+        
         .memo-system { flex: 1; display: flex; background: var(--card); border-radius: 12px; border: 1px solid #444; overflow: hidden; min-height: 550px; }
         .memo-list-side { width: 200px; border-right: 1px solid #444; display: flex; flex-direction: column; background: #23272a; }
         .memo-list-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; }
         .add-btn { background: var(--primary); border: none; color: #333; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
         #memo-items { flex: 1; overflow-y: auto; }
-        .memo-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.9rem; position: relative; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .memo-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; font-size: 0.9rem; position: relative; color: #aaa; overflow: hidden; text-overflow: ellipsis; }
         .memo-item.active { background: #32353b; color: var(--primary); border-left: 4px solid var(--primary); }
         .delete-memo { position: absolute; right: 5px; top: 12px; color: #ff4444; display: none; }
         .memo-item:hover .delete-memo { display: block; }
@@ -37,7 +38,8 @@
 
 <div class="wrapper">
     <div class="main-tracker">
-        <details open><summary>每日刷新 (04/00 / 23:00)</summary>
+        <details open>
+            <summary>每日刷新 (04:00 / 23:00)</summary>
             <div class="content">
                 <div class="item"><span>軍隊籌備 (04:00)</span> <input type="checkbox" class="task-check" data-id="d04_army"></div>
                 <div class="item"><span>隨機副本 (23:00)</span> <input type="checkbox" class="task-check" data-id="d23_roulette"></div>
@@ -45,21 +47,44 @@
                 <div class="item"><span>友好部族 (23:00)</span> <input type="checkbox" class="task-check" data-id="d23_tribe"></div>
             </div>
         </details>
-        <details open><summary style="color:var(--weekly)">每週刷新 (週二 16:00)</summary>
+
+        <details open>
+            <summary style="color:var(--weekly)">每週刷新 (週二 16:00)</summary>
             <div class="content">
                 <div class="item"><span>天書奇談</span> <input type="checkbox" class="task-check" data-id="w2_book"></div>
                 <div class="item"><span>時尚品鑑</span> <input type="checkbox" class="task-check" data-id="w2_fashion"></div>
                 <div class="item"><span>部分副本獎勵</span> <input type="checkbox" class="task-check" data-id="w2_raid"></div>
+                <div class="item"><span>新式神典石數量</span> <input type="checkbox" class="task-check" data-id="w2_stone"></div>
                 <div class="item"><span>老主顧任務</span> <input type="checkbox" class="task-check" data-id="w2_custom"></div>
+                <div class="item"><span>多瑪復興</span> <input type="checkbox" class="task-check" data-id="w2_doma"></div>
                 <div class="item"><span>挑戰筆記</span> <input type="checkbox" class="task-check" data-id="w2_log"></div>
             </div>
         </details>
-        <details open><summary>計時器與理符</summary>
+
+        <details open>
+            <summary style="color:#f2a154">每週六刷新 (21:00)</summary>
             <div class="content">
-                <div class="item"><div><span>理符權</span><br><span id="leve-next" class="hint" style="font-size:0.7rem;color:#888;">--</span></div>
-                    <div class="count-controls"><button class="ctrl-btn" onclick="changeLeve(-1)">-</button><span id="leve-val">0</span><button class="ctrl-btn" onclick="changeLeve(1)">+</button></div>
+                <div class="item"><span>仙人彩公布</span> <input type="checkbox" class="task-check" data-id="ws6_jumbo"></div>
+            </div>
+        </details>
+
+        <details open>
+            <summary>特殊計時與理符</summary>
+            <div class="content">
+                <div class="item">
+                    <div><span>理符權 (100)</span><br><span class="hint" id="leve-next">--</span></div>
+                    <div class="count-controls">
+                        <button class="ctrl-btn" onclick="changeLeve(-10)">--</button>
+                        <button class="ctrl-btn" onclick="changeLeve(-1)">-</button>
+                        <span id="leve-val" style="font-weight:bold; color:#50c878; min-width:30px; text-align:center;">0</span>
+                        <button class="ctrl-btn" onclick="changeLeve(1)">+</button>
+                        <button class="ctrl-btn" onclick="changeLeve(10)">++</button>
+                    </div>
                 </div>
-                <div class="item"><div><span>藏寶圖 (18h)</span><br><span id="map-timer" class="timer">--</span></div><input type="checkbox" class="task-check" data-id="map_treasure" id="map_cb"></div>
+                <div class="item">
+                    <div><span>藏寶圖 (18h)</span><br><span id="map-timer" class="timer">--</span></div>
+                    <input type="checkbox" class="task-check" data-id="map_treasure" id="map_cb">
+                </div>
             </div>
         </details>
     </div>
@@ -77,23 +102,26 @@
 </div>
 
 <script>
-    let memos = JSON.parse(localStorage.getItem('ff_memos')) || [];
+    let memos = JSON.parse(localStorage.getItem('ffxiv_memos')) || [];
     let currentMemoId = null;
 
     function init() {
-        // 1. 刷新檢查
-        checkReset('d04_', getPastReset(4));
-        checkReset('d23_', getPastReset(23));
-        checkReset('w2_', getPastWeeklyReset(2, 16));
+        // 1. 刷新邏輯
+        try {
+            checkReset('d04_', getPastReset(4));
+            checkReset('d23_', getPastReset(23));
+            checkReset('w2_', getPastWeeklyReset(2, 16));
+            checkReset('ws6_', getPastWeeklyReset(6, 21));
+        } catch(e) { console.error("刷新檢查失敗", e); }
 
         // 2. 任務勾選讀取
         document.querySelectorAll('.task-check').forEach(cb => {
             const id = cb.getAttribute('data-id');
-            cb.checked = localStorage.getItem('task_' + id) === 'true';
+            cb.checked = localStorage.getItem(id) === 'true';
             cb.addEventListener('change', (e) => {
-                localStorage.setItem('task_' + id, e.target.checked);
+                localStorage.setItem(id, e.target.checked);
                 if (id === 'map_treasure' && e.target.checked) {
-                    localStorage.setItem('map_last', Date.now());
+                    localStorage.setItem('map_last_time', Date.now());
                     handleMapLogic();
                 }
             });
@@ -101,42 +129,54 @@
 
         // 3. 備忘錄初始化
         renderMemoList();
-        const tx = document.getElementById('memo-textarea');
-        tx.addEventListener('input', () => {
+        const textarea = document.getElementById('memo-textarea');
+        textarea.addEventListener('input', () => {
             if (currentMemoId) {
                 const m = memos.find(x => x.id === currentMemoId);
                 if (m) {
-                    m.content = tx.value;
-                    m.title = tx.value.split('\n')[0].substring(0, 12) || "新便貼";
-                    saveMemos(); renderMemoList();
+                    m.content = textarea.value;
+                    m.title = textarea.value.split('\n')[0].substring(0, 12) || "新便貼";
+                    saveMemos();
+                    renderMemoList();
                 }
             }
         });
 
+        // 4. 定時器
         updateLeves();
         handleMapLogic();
         setInterval(() => { handleMapLogic(); updateLeves(); }, 60000);
     }
 
-    // --- 備忘錄功能 ---
+    // --- 備忘錄函式 ---
     function addMemo() {
         const m = { id: Date.now(), title: "新便貼", content: "" };
-        memos.unshift(m); saveMemos(); renderMemoList(); selectMemo(m.id);
+        memos.unshift(m);
+        saveMemos();
+        renderMemoList();
+        selectMemo(m.id);
     }
     function selectMemo(id) {
-        currentMemoId = id; const m = memos.find(x => x.id === id);
+        currentMemoId = id;
+        const m = memos.find(x => x.id === id);
         const tx = document.getElementById('memo-textarea');
         const em = document.getElementById('memo-empty');
         if (m) { em.style.display='none'; tx.style.display='block'; tx.value=m.content; tx.focus(); }
         renderMemoList();
     }
     function deleteMemo(e, id) {
-        e.stopPropagation(); memos = memos.filter(x => x.id !== id);
-        if (currentMemoId === id) { currentMemoId = null; document.getElementById('memo-textarea').style.display='none'; document.getElementById('memo-empty').style.display='block'; }
+        e.stopPropagation();
+        memos = memos.filter(x => x.id !== id);
+        if (currentMemoId === id) {
+            currentMemoId = null;
+            document.getElementById('memo-textarea').style.display='none';
+            document.getElementById('memo-empty').style.display='block';
+        }
         saveMemos(); renderMemoList();
     }
     function renderMemoList() {
-        const container = document.getElementById('memo-items'); container.innerHTML = '';
+        const container = document.getElementById('memo-items');
+        container.innerHTML = '';
         memos.forEach(m => {
             const div = document.createElement('div');
             div.className = `memo-item ${m.id === currentMemoId ? 'active' : ''}`;
@@ -145,48 +185,66 @@
             container.appendChild(div);
         });
     }
-    function saveMemos() { localStorage.setItem('ff_memos', JSON.stringify(memos)); }
+    function saveMemos() { localStorage.setItem('ffxiv_memos', JSON.stringify(memos)); }
 
-    // --- 理符與計時 ---
+    // --- 理符與地圖 ---
     function updateLeves() {
         const last = localStorage.getItem('leve_sync');
         let count = parseInt(localStorage.getItem('leve_count')) || 0;
         const now = new Date();
         if (!last) { localStorage.setItem('leve_sync', Date.now()); renderLeve(count); return; }
-        let lDate = new Date(parseInt(last)); let nP = new Date(lDate); nP.setMinutes(0,0,0);
+        let lDate = new Date(parseInt(last));
+        let nP = new Date(lDate); nP.setMinutes(0,0,0);
         if (nP.getHours() < 8) nP.setHours(8); else if (nP.getHours() < 20) nP.setHours(20); else { nP.setDate(nP.getDate()+1); nP.setHours(8); }
-        while (nP <= now) { count = Math.min(100, count + 3); lDate.setTime(nP.getTime()); if (nP.getHours() === 8) nP.setHours(20); else { nP.setDate(nP.getDate()+1); nP.setHours(8); } }
+        while (nP <= now) { count = Math.min(100, count + 3); lDate.setTime(nP.getTime());
+            if (nP.getHours() === 8) nP.setHours(20); else { nP.setDate(nP.getDate()+1); nP.setHours(8); }
+        }
         localStorage.setItem('leve_count', count); localStorage.setItem('leve_sync', lDate.getTime());
         renderLeve(count, nP);
     }
     function changeLeve(v) {
         let c = (parseInt(localStorage.getItem('leve_count')) || 0) + v;
-        c = Math.max(0, Math.min(100, c)); localStorage.setItem('leve_count', c); updateLeves();
+        c = Math.max(0, Math.min(100, c));
+        localStorage.setItem('leve_count', c); updateLeves();
     }
-    function renderLeve(c, n) { document.getElementById('leve-val').innerText = c; if (n) document.getElementById('leve-next').innerText = `下次：${n.getHours()}:00 (+3)`; }
-
+    function renderLeve(c, n) {
+        document.getElementById('leve-val').innerText = c;
+        if (n) document.getElementById('leve-next').innerText = `下次：${n.getHours()}:00 (+3)`;
+    }
     function handleMapLogic() {
-        const last = localStorage.getItem('map_last'); const timerEl = document.getElementById('map-timer');
+        const last = localStorage.getItem('map_last_time');
+        const timerEl = document.getElementById('map-timer');
         if (!last) { timerEl.innerText = "點擊勾選開始"; return; }
         const diff = (parseInt(last) + 64800000) - Date.now();
-        if (diff <= 0) { timerEl.innerText = "可以挖了！"; timerEl.style.color = "#00ff00"; const cb = document.getElementById('map_cb'); if (cb.checked) { cb.checked = false; localStorage.setItem('task_map_treasure', 'false'); } }
-        else { const h = Math.floor(diff/3600000); const m = Math.floor((diff%3600000)/60000); timerEl.innerText = `${h}h ${m}m`; timerEl.style.color = "#ff4444"; }
+        if (diff <= 0) {
+            timerEl.innerText = "可以挖了！"; timerEl.style.color = "#00ff00";
+            const cb = document.getElementById('map_cb');
+            if (cb.checked) { cb.checked = false; localStorage.setItem('map_treasure', 'false'); }
+        } else {
+            const h = Math.floor(diff/3600000); const m = Math.floor((diff%3600000)/60000);
+            timerEl.innerText = `${h}h ${m}m`; timerEl.style.color = "#ff4444";
+        }
     }
 
     // --- 工具 ---
     function checkReset(prefix, ts) {
         const last = localStorage.getItem('reset_' + prefix);
         if (!last || parseInt(last) < ts) {
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('task_' + prefix)) { localStorage.removeItem(key); i--; }
-            }
+            document.querySelectorAll(`.task-check[data-id^="${prefix}"]`).forEach(cb => {
+                localStorage.removeItem(cb.getAttribute('data-id')); cb.checked = false;
+            });
             localStorage.setItem('reset_' + prefix, ts);
-            location.reload(); // 刷新頁面更新 UI
         }
     }
-    function getPastReset(h) { const d = new Date(); if (d.getHours() < h) d.setDate(d.getDate() - 1); d.setHours(h, 0, 0, 0); return d.getTime(); }
-    function getPastWeeklyReset(day, h) { const d = new Date(); let diff = d.getDay() - day; if (diff < 0) diff += 7; d.setDate(d.getDate() - diff); d.setHours(h, 0, 0, 0); if (Date.now() < d.getTime()) d.setDate(d.getDate() - 7); return d.getTime(); }
+    function getPastReset(h) {
+        const d = new Date(); if (d.getHours() < h) d.setDate(d.getDate() - 1);
+        d.setHours(h, 0, 0, 0); return d.getTime();
+    }
+    function getPastWeeklyReset(day, h) {
+        const d = new Date(); let diff = d.getDay() - day; if (diff < 0) diff += 7;
+        d.setDate(d.getDate() - diff); d.setHours(h, 0, 0, 0);
+        if (Date.now() < d.getTime()) d.setDate(d.getDate() - 7); return d.getTime();
+    }
 
     init();
 </script>
