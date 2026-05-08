@@ -230,16 +230,10 @@
     function checkReset(prefix, ts) {
         const last = localStorage.getItem('reset_' + prefix);
         if (!last || parseInt(last) < ts) {
-            // 刪除所有該時段的任務勾選紀錄 (task_d23_... 等)
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('task_' + prefix)) {
-                    localStorage.removeItem(key);
-                }
+            document.querySelectorAll ( `.task - check[data-id^=" $ { prefix } " ]` ) .forEach ( cb => {  
+                localStorage.removeItem ( cb.getAttribute ( ' data - id ' ) ) ; cb.checked = false ;   
             });
-            // 更新重置點紀錄，避免重複重整
             localStorage.setItem('reset_' + prefix, ts);
-            // 執行重整
-            location.reload();
         }
     }
     function getPastReset(h) {
@@ -252,41 +246,6 @@
         if (Date.now() < d.getTime()) d.setDate(d.getDate() - 7); return d.getTime();
     }
 
-    init();
-
-    // --- 定時自動檢查 (每 60 秒跑一次) ---
-    setInterval(() => {
-        const now = Date.now();
-        
-        // 只更新文字，不重整網頁
-        // 這會讓藏寶圖的倒數每分鐘跳動一次，理符數字也會在 08:00/20:00 自動增加
-        updateLeves();
-        handleMapLogic();
-
-        // 條件重整：只有偵測到「該刷新卻還沒刷新」時才觸發 reload
-        // 取得當前應該對應的重置時間戳
-        const target23 = getPastReset(23);
-        const target04 = getPastReset(4);
-        const targetW2 = getPastWeeklyReset(2, 16);
-
-        // 檢查 localStorage 裡的紀錄是否舊於現在應該有的重置點
-        const need23 = (now >= target23 && (parseInt(localStorage.getItem('reset_d23_')) || 0) < target23);
-        const need04 = (now >= target04 && (parseInt(localStorage.getItem('reset_d04_')) || 0) < target04);
-        const needW2 = (now >= targetW2 && (parseInt(localStorage.getItem('reset_w2_')) || 0) < targetW2);
-
-        if (need23 || need04 || needW2) {
-            console.log("偵測到重置點，正在自動清理清單並重整網頁...");
-            
-            // 執行清理邏輯
-            if (need23) checkReset('d23_', target23);
-            if (need04) checkReset('d04_', target04);
-            if (needW2) checkReset('w2_', targetW2);
-            
-            // 注意：checkReset 函式內部必須含有 location.reload() 才會觸發重新整理
-        }
-    }, 60000); 
-
-    // 網頁開啟時先手動執行一次初始化
     init();
 </script>
 </body>
