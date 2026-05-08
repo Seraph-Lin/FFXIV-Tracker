@@ -105,14 +105,28 @@
     let memos = JSON.parse(localStorage.getItem('ffxiv_memos')) || [];
     let currentMemoId = null;
 
-    function init() {
-        // 1. 刷新邏輯
+    // --- [核心功能] 執行所有重置與理符邏輯 ---
+    function performCoreChecks() {
         try {
+            // 檢查每日、每週重置點
             checkReset('d04_', getPastReset(4));
             checkReset('d23_', getPastReset(23));
             checkReset('w2_', getPastWeeklyReset(2, 16));
             checkReset('ws6_', getPastWeeklyReset(6, 21));
-        } catch(e) { console.error("刷新檢查失敗", e); }
+            
+            // 更新理符數量
+            updateLeves();
+        } catch(e) { console.error("核心檢查失敗", e); }
+    }
+
+    // --- [視覺功能] 單純讓藏寶圖文字跳動 ---
+    function tickVisuals() {
+        handleMapLogic();
+    }
+
+    function init() {
+        // 1. 執行一次核心檢查
+        performCoreChecks();
 
         // 2. 任務勾選讀取
         document.querySelectorAll('.task-check').forEach(cb => {
@@ -122,7 +136,7 @@
                 localStorage.setItem(id, e.target.checked);
                 if (id === 'map_treasure' && e.target.checked) {
                     localStorage.setItem('map_last_time', Date.now());
-                    handleMapLogic();
+                    tickVisuals();
                 }
             });
         });
@@ -142,11 +156,23 @@
             }
         });
 
-        // 4. 定時器
-        updateLeves();
-        handleMapLogic();
-        setInterval(() => { handleMapLogic(); updateLeves(); }, 60000);
+        // 4. 初次執行視覺更新
+        tickVisuals();
     }
+
+    // --- 定時器與監聽器 ---
+
+    // 每一分鐘只讓藏寶圖數字動一下
+    setInterval(tickVisuals, 60000);
+
+    // 當使用者「回到網頁」時，執行完整核心檢查（理符、重置）
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            console.log("偵測到頁面喚醒，執行狀態同步...");
+            performCoreChecks();
+            tickVisuals();
+        }
+    });
 
     // --- 備忘錄函式 ---
     function addMemo() {
@@ -219,21 +245,27 @@
         if (diff <= 0) {
             timerEl.innerText = "可以挖了！"; timerEl.style.color = "#00ff00";
             const cb = document.getElementById('map_cb');
-            if (cb.checked) { cb.checked = false; localStorage.setItem('map_treasure', 'false'); }
+            if (cb.checked) { 
+                cb.checked = false; 
+                localStorage.setItem('map_treasure', 'false'); 
+            }
         } else {
             const h = Math.floor(diff/3600000); const m = Math.floor((diff%3600000)/60000);
             timerEl.innerText = `${h}h ${m}m`; timerEl.style.color = "#ff4444";
         }
     }
 
-    // --- 工具 ---
+    // --- 重置工具 ---
     function checkReset(prefix, ts) {
         const last = localStorage.getItem('reset_' + prefix);
         if (!last || parseInt(last) < ts) {
-            document.querySelectorAll ( `.task - check[data-id^=" $ { prefix } " ]` ) .forEach ( cb => {  
-                localStorage.removeItem ( cb.getAttribute ( ' data - id ' ) ) ; cb.checked = false ;   
+            document.querySelectorAll(`.task-check[data-id^="${prefix}"]`).forEach(cb => {
+                localStorage.removeItem(cb.getAttribute('data-id')); 
+                cb.checked = false;
             });
             localStorage.setItem('reset_' + prefix, ts);
+            // 只有真的發生重置時才刷新頁面
+            if (last) location.reload();
         }
     }
     function getPastReset(h) {
